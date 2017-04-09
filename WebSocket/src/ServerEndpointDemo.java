@@ -1,11 +1,16 @@
-
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.server.ServerEndpoint;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import javax.websocket.Session;
 /*
+
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
@@ -16,19 +21,35 @@ import javax.websocket.server.ServerEndpoint;
  */
 @ServerEndpoint("/serverendpointdemo")
 public class ServerEndpointDemo {
-    @OnOpen
-    public void handleOpen(){
-        System.out.println("Client is now connected...");
+	private static Set<Session> clients = 
+		    Collections.synchronizedSet(new HashSet<Session>());
+	
+	@OnOpen
+    public void handleOpen(Session session){
+		// Add session to the connected sessions set
+	    clients.add(session);
+		System.out.println("Client is now connected...");
     }
     @OnMessage
-    public String handleMessage(String message  ){
-        System.out.println("received from client "+message);
-        String replyMessage = "Replyed assas"+message;
-        System.out.println("Sent message to client "+replyMessage);
-        return replyMessage;
+    public void onMessage(String message, Session session) 
+    	    throws IOException {
+    	    
+    	    synchronized(clients){
+    	      // Iterate over the connected sessions
+    	      // and broadcast the received message
+    	      for(Session client : clients){
+    	        if (!client.equals(session)){
+    	          client.getBasicRemote().sendText(message);
+    	        }
+    	      }
+    	    }
+    	    
     }
+    
     @OnClose
-    public void handleClose(){
+    public void handleClose(Session session){
+    	// Remove session from the connected sessions set
+        clients.remove(session);
         System.out.println("Client is now Disconnected...");
     }
     @OnError
