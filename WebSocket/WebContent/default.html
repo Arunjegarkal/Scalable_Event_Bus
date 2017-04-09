@@ -1,0 +1,50 @@
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+    <body>
+        <form>
+            <input id="textMessage" type="text">
+            <input onClick="sendMessage();" value="Send Message" type="button">
+        </form>
+        <br><textarea id="messageTextArea"  rows="10" cols="50"></textarea>
+        <script type="text/javascript">
+        var webSocket =new WebSocket("ws://localhost:8080/WebSocket/serverendpointdemo");
+        var messageTextArea=document.getElementById("messageTextArea");
+        webSocket.onopen=function(message){processOpen(message);};
+        webSocket.onmessage=function(message){processMessage(message);};
+        webSocket.onclose=function(message){processClose(message);};
+        webSocket.onerror=function(message){processError(message);};
+        
+        function processOpen(message){
+        	messageTextArea.value += "Server Connect...";
+        }
+        function processMessage(message){
+            messageTextArea.value += "Received from server "+message.data+"\n";
+        }
+        function processClose(message){
+            webSocket.send("Client Disconnected...");
+            messageTextArea.value += "Server Disconnect..."+"\n";
+        }
+        function sendMessage(){
+            if(textMessage.value!="close"){
+                webSocket.send(textMessage.value);
+                messageTextArea.value += "Send to Server " +textMessage.value+"\n";
+                textMessage.value="";
+            }
+            else
+                webSocket.close();
+            
+        }
+        function processError(message){
+            messageTextArea.value += "Error...\n";
+        }
+        </script>
+    </body>
+</html>
