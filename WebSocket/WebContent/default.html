@@ -9,11 +9,34 @@ and open the template in the editor.
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     </head>
     <body>
-        <form>
-            <input id="textMessage" type="text">
+ 	<table>
+  <tr>
+    <th>Publisher</th>
+    <th>&nbsp&nbsp&nbsp&nbsp</th>
+    <th>Subscriber</th>
+  </tr>
+  <tr>
+    <td>
+		<form>
+    		<input id="textMessage" type="text">
             <input onClick="sendMessage();" value="Send Message" type="button">
         </form>
         <br><textarea id="messageTextArea"  rows="10" cols="50"></textarea>
+	</td>
+    <td>
+    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+    </td>
+    <td>
+    	<h2>Select the Topic<h2>
+		<select id="topic">
+		  <option value="Sports">Sports</option>
+		  <option value="Lifestyle">Lifestyle</option>
+		</select>
+		<input onClick="SetTopic();" value="Set Topic" type="button"><br><br><br>	
+	</td>
+  </tr>
+</table>
+        
         <script type="text/javascript">
         var webSocket =new WebSocket("ws://localhost:8080/WebSocket/serverendpointdemo");
         var messageTextArea=document.getElementById("messageTextArea");
@@ -33,14 +56,20 @@ and open the template in the editor.
             messageTextArea.value += "Server Disconnect..."+"\n";
         }
         function sendMessage(){
+        	var topic=document.getElementById("topic");
             if(textMessage.value!="close"){
-                webSocket.send(textMessage.value);
-                messageTextArea.value += "Send to Server " +textMessage.value+"\n";
+                webSocket.send(topic.value+"::"+textMessage.value);
+                messageTextArea.value += "Send to Server " +topic.value+"::"+textMessage.value+"\n";
                 textMessage.value="";
             }
             else
                 webSocket.close();
             
+        }
+        function SetTopic(){
+        	var topic=document.getElementById("topic");
+        	//alert("Topic:"+topic.value);
+        	webSocket.send("Topic-"+topic.value);
         }
         function processError(message){
             messageTextArea.value += "Error...\n";
