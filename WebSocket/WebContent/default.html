@@ -11,15 +11,22 @@ and open the template in the editor.
     <body>
  	<table>
   <tr>
-    <th>Publisher</th>
+    <th><h2>Publisher End</h2></th>
     <th>&nbsp&nbsp&nbsp&nbsp</th>
-    <th>Subscriber</th>
+    <th><h2>Subscriber End</h2></th>
   </tr>
   <tr>
     <td>
 		<form>
-    		<input id="textMessage" type="text">
+			<h3>Select Topic to Publish</h3>
+			<select id="pub_topic">
+			  <option selected="selected" value="No Topic Selected">No Topic Selected</option>
+			  <option value="Sports">Sports</option>
+			  <option value="Lifestyle">Lifestyle</option>
+			</select><br>
+    		<input id="textMessage" type="text" placeholder="Enter text to send">
             <input onClick="sendMessage();" value="Send Message" type="button">
+            <br>
         </form>
         <br><textarea id="messageTextArea"  rows="10" cols="50"></textarea>
 	</td>
@@ -27,19 +34,21 @@ and open the template in the editor.
     &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
     </td>
     <td>
-    	<h2>Select the Topic<h2>
+    	<h3>Subscribe the Topic</h3>
 		<select id="topic">
+		  <option selected="selected" value="No Topics Subscribed">No Topic Subscribed</option>
 		  <option value="Sports">Sports</option>
 		  <option value="Lifestyle">Lifestyle</option>
 		</select>
-		<input onClick="SetTopic();" value="Set Topic" type="button"><br><br><br>	
+		<input onClick="SetTopic();" value="Subscribe" type="button"><br>
+		<br><textarea id="ReceivedmessageTextArea"  rows="10" cols="50" style="color:red" >No Topics Subscribed</textarea>	
 	</td>
   </tr>
 </table>
-        
         <script type="text/javascript">
         var webSocket =new WebSocket("ws://localhost:8080/WebSocket/serverendpointdemo");
         var messageTextArea=document.getElementById("messageTextArea");
+        var ReceivedmessageTextArea=document.getElementById("ReceivedmessageTextArea");
         webSocket.onopen=function(message){processOpen(message);};
         webSocket.onmessage=function(message){processMessage(message);};
         webSocket.onclose=function(message){processClose(message);};
@@ -49,27 +58,48 @@ and open the template in the editor.
         	messageTextArea.value += "Server Connect...";
         }
         function processMessage(message){
-            messageTextArea.value += "Received from server "+message.data+"\n";
+        	ReceivedmessageTextArea.value += " "+message.data+"\n";
         }
         function processClose(message){
             webSocket.send("Client Disconnected...");
             messageTextArea.value += "Server Disconnect..."+"\n";
         }
         function sendMessage(){
-        	var topic=document.getElementById("topic");
-            if(textMessage.value!="close"){
-                webSocket.send(topic.value+"::"+textMessage.value);
-                messageTextArea.value += "Send to Server " +topic.value+"::"+textMessage.value+"\n";
-                textMessage.value="";
+        	var pub_topic=document.getElementById("pub_topic");
+        	
+        	if((pub_topic.value).localeCompare("No Topic Selected")==0)
+            {
+            	alert("Select the topic to publish");
             }
             else
-                webSocket.close();
-            
+           	{
+            	
+            	if(textMessage.value!="close"){
+	                if(textMessage.value!="")
+            		{
+	                	webSocket.send(topic.value+"::"+textMessage.value);
+	                	messageTextArea.value += "Send to Server " +pub_topic.value+"::"+textMessage.value+"\n";
+		                textMessage.value="";
+            		}
+	            }
+	            else
+	                webSocket.close(); 
+           	}
+	        	    
         }
         function SetTopic(){
+        	
         	var topic=document.getElementById("topic");
-        	//alert("Topic:"+topic.value);
-        	webSocket.send("Topic-"+topic.value);
+        	if((topic.value).localeCompare("No Topics Subscribed")==0)	
+        	{
+        		alert("Subscribe to topic");
+        	}
+        	else
+        	{
+        		ReceivedmessageTextArea.style.color='black';
+            	ReceivedmessageTextArea.value=""+(topic.value).localeCompare("No Topics Subscribed");
+        		webSocket.send("Topic-"+topic.value);
+        	}
         }
         function processError(message){
             messageTextArea.value += "Error...\n";

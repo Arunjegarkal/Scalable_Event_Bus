@@ -54,7 +54,7 @@ public class ServerEndpointDemo {
 	    	      for(Session client : clients){
 	    	    	if (!client.equals(session) && client_list.get(client.getId()).equals(message_topic))
 	    	        {
-	    	        	String msg=message+" from "+session.getId();
+	    	        	String msg=message;
 	    	        	client.getBasicRemote().sendText(msg);
 	    	    	}
 	    	      }
