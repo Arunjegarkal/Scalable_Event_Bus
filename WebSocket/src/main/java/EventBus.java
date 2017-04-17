@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.HashMap;
@@ -123,7 +124,12 @@ public class EventBus
 		} 
         
     	//if(message.startsWith("R::"))
-	    if(MF.Message.equals("Register"))
+		if(MF.Message.equals("get"))
+		{
+			System.out.println("**************gett");
+	    	Get_Message_to_list( new Timestamp(System.currentTimeMillis()),MF.Topic,session);
+	    }
+		if(MF.Message.equals("Register"))
 		{
     		//message=message.substring(3);
 	    	//String[] split=message.split(",");
@@ -135,7 +141,7 @@ public class EventBus
     	    	Add_to_Client_list(session.getId(), m);
     	    	System.out.println("[SERVER RECV] Session " + session.getId() + " Registred Topic : " + m);
             }
-	    	
+	    	Get_Message_to_list( new Timestamp(System.currentTimeMillis()),MF.Topic,session);
 	    }
         else
 	    {
@@ -147,7 +153,7 @@ public class EventBus
 	    	String msg=MF.Message;
 	    	//System.out.println("--------"+message_topic);
 	    	String[] split=message_topic.split(",");
-            
+	    	Add_Message_to_list(MF.Time,MF);
         	for (String m: split)
             {
 		    	synchronized(clients){
@@ -182,7 +188,7 @@ public class EventBus
 	    	    	  Set entrySet = map.entrySet();
 	    	          Iterator it = entrySet.iterator();
 	    	          //System.out.println("-----"+map.get(client.getId()));
-	    	          //System.out.println("--==");
+	    	          //System.out.println("client.getId())--=="+client.getId());
 	    	          
 	    	          //System.out.println("  Object key  Object value");
 	    	          //while (it.hasNext()) {
@@ -191,20 +197,20 @@ public class EventBus
 	    	              if(list!=null)
 	    	              {
 	    	              for (int j = 0; j < list.size(); j++) {
-	    	                  //System.out.println("\t" + mapEntry.getKey() + "\t  " + list.get(j));
-	    	                  //System.out.println("j"+j);
-	    	            	  //System.out.println("list.get(j)"+list.get(j));
-	    	                  //System.out.println("message_topic"+message_topic);
-	    	                  //System.out.println("!client.equals(session)"+!client.equals(session));
-	    	                  
+	    	                 // System.out.println("\t" + mapEntry.getKey() + "\t  " + list.get(j));
+	    	                 /* System.out.println("j"+j);
+	    	            	  System.out.println("list.get(j)"+list.get(j));
+	    	                  System.out.println("message_topic"+message_topic);
+	    	                  System.out.println("!client.equals(session)"+!client.equals(session));
+	    	                  */
 	    	                  if (!client.equals(session) && list.get(j).equals(m))
 	      	    	        {
 	    	                	  //System.out.println("enee");
 	      	    			  //String msg=message;
 	      	    	        	try {
 	      							client.getBasicRemote().sendText(m+msg);
-	      							System.out.println("--------Sent ----- "+time+" Time "+m+msg+" to "+client.getId());
-	      							Add_to_message_datamap(time,msg);
+	      							//System.out.println("--------Sent ----- "+time+" Time "+m+msg+" to "+client.getId());
+	      							//Add_to_message_datamap(time,msg);
 	      						} 
 	      	    	        	catch (IOException e) {
 	      							// TODO Auto-generated catch block
@@ -220,6 +226,56 @@ public class EventBus
 		    	}
             }
 	    }
+    }
+    public void Add_Message_to_list(Timestamp t,MessageFormat M)
+    {
+    	message_datamap.put(t, M);
+    	//System.out.println("Stored "+M.Message);
+    }
+    public void Get_Message_to_list(Timestamp t,String topic,Session session)
+    {
+    	Set entrySet = message_datamap.entrySet();
+        Iterator it = entrySet.iterator();
+        
+    	while (it.hasNext()) {
+            Map.Entry mapEntry = (Map.Entry) it.next();
+            list = (List) message_datamap.get(mapEntry.getKey());
+            MessageFormat M=new MessageFormat();
+            //System.out.println("mapEntry.getKey() "+mapEntry.getKey());
+            //Timestamp actualTimeStampDate =actualTimeStampDate = new Timestamp((Long) mapEntry.getKey());
+           // System.out.println("   t = "+t +" value "+t.after((Timestamp) mapEntry.getKey()));
+            if(t.after((Timestamp) mapEntry.getKey()))
+            {
+            	for (int j = 0; j < list.size(); j++) {
+                	M=(MessageFormat) list.get(j);
+                    System.out.println("\t" + mapEntry.getKey() + "\t  " +M.Message+"   "+M.Topic+ "   ");
+                }
+            }
+            
+        }
+    	/*Set entrySet = message_datamap.entrySet();
+        Iterator it = entrySet.iterator();
+        System.out.println("*****************Called");
+    	while (it.hasNext()) {
+            Map.Entry message_datamapEntry = (Map.Entry) it.next();
+            list = (List) message_datamap.get(message_datamapEntry.getKey());
+            Timestamp actualTimeStampDate =actualTimeStampDate = new Timestamp((Long) message_datamapEntry.getKey());
+            System.out.println("*****************t "+t);
+            System.out.println("actualTimeStampDate"+actualTimeStampDate);
+            if(actualTimeStampDate.before(t))
+            {
+            	for (int j = 0; j < list.size(); j++) {
+	                System.out.println("\t" + message_datamapEntry.getKey() + "\t  " + list.get(j));
+	                try {
+						session.getBasicRemote().sendText("--------*********-------"+(String) list.get(j));
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+	            }
+            }
+        }*/
+    	
     }
     //Adding Client and topic to the list
     public void Add_to_Client_list(String session,String message)
@@ -246,6 +302,7 @@ public class EventBus
     public void Add_to_message_datamap(Timestamp timestamp,String message)
     {
     	message_datamap.put(timestamp, message);	
+    	//System.out.println("Stored "+message);
     }
     public static void Start_EventBus()
     {

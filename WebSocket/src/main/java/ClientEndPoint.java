@@ -77,7 +77,7 @@ public class ClientEndPoint {
                         {
 
                         	
-                            Publisher p=new Publisher(timer,session,messageLatch,arg2_topic+"::");
+                            Publisher p=new Publisher(timer,session,messageLatch,arg2_topic);
                             p.start();
                         	/*while(true)
                         	{
@@ -98,8 +98,20 @@ public class ClientEndPoint {
             	        	ObjectOutputStream out = new ObjectOutputStream(buffer);
             	        	out.writeObject(MF);
             	        	session.getBasicRemote().sendObject(out);
-            	        	out.close();
+            	        	
                         	//session.getBasicRemote().sendText("R::"+arg2_topic);
+            	        	/*
+            	        	MF.Message="get";
+            	        	MF.Time=new Timestamp(date.getTime());
+            	        	MF.Topic=arg2_topic;
+            	        	OutputStream file1 = new FileOutputStream("quarks.ser");
+            	            OutputStream buffer1 = new BufferedOutputStream(file1);
+            	        	//ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+            	        	ObjectOutputStream out1 = new ObjectOutputStream(buffer1);
+            	        	out.writeObject(MF);
+            	        	session.getBasicRemote().sendObject(out);
+            	        	*/
+            	        	out.close();
                         }
                         
                         //session.getBasicRemote().sendText("STOP");
