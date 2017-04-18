@@ -123,94 +123,40 @@ public class EventBus
 			//e.printStackTrace();
 		} 
         
-    	//if(message.startsWith("R::"))
-		if(MF.Message.equals("get"))
-		{
-			System.out.println("**************gett");
-	    	Get_Message_to_list( new Timestamp(System.currentTimeMillis()),MF.Topic,session);
-	    }
 		if(MF.Message.equals("Register"))
 		{
-    		//message=message.substring(3);
-	    	//String[] split=message.split(",");
-	    	String[] split=MF.Topic.split(",");
+    		String[] split=MF.Topic.split(",");
+	    	//System.out.println("split "+split);
 	    	for (String m: split)
             {
-            	System.out.println(""+m);
-            	System.out.println("-----------------------------"+m);
-    	    	Add_to_Client_list(session.getId(), m);
+            	Add_to_Client_list(session.getId(), m);
     	    	System.out.println("[SERVER RECV] Session " + session.getId() + " Registred Topic : " + m);
             }
 	    	Get_Message_to_list( new Timestamp(System.currentTimeMillis()),MF.Topic,session);
 	    }
         else
 	    {
-	    	//String message_topic=message.substring(0,message.indexOf("::"));
-	    	//String msg=message.substring(message.indexOf("::"));
-	    	//System.out.println("--------"+message_topic);
-	    	//String[] split=message_topic.split(",");
-        	String message_topic=MF.Topic;
+	    	String message_topic=MF.Topic;
 	    	String msg=MF.Message;
-	    	//System.out.println("--------"+message_topic);
 	    	String[] split=message_topic.split(",");
 	    	Add_Message_to_list(MF.Time,MF);
         	for (String m: split)
             {
 		    	synchronized(clients){
 		    		
-	    	      // Iterate over the connected sessions
-	    	      // and broadcast the received message
 	    	      for(Session client : clients){
-	    	    	  /*System.out.println("message "+message_topic);
-	    	    	  System.out.println("client.getId() "+client.getId());
-	    	    	  System.out.println("client_list.get(client.getId()) "+client_list.get(client.getId()));
-	    	    	  //System.out.println("*************"+client_list.get(client.getId()).equals(message_topic));
-	    	    	  System.out.println("**********"+client);*/
-	    	    	  
-	    	    	  /*String temp=client_list.get(client.getId());
-	    	    	  if(temp!=null )
-	    	    	  {
-	    	    		  if (!client.equals(session) && temp.equals(message_topic))
-	    	    	        {
-	    	    			  String msg=message;
-	    	    	        	try {
-	    							client.getBasicRemote().sendText(msg);
-	    							System.out.println("--------Sent ----- "+time+" Time "+message+" to "+client.getId());
-	    						} 
-	    	    	        	catch (IOException e) {
-	    							// TODO Auto-generated catch block
-	    							e.printStackTrace();
-	    						}
-	    	    	        	
-	    	    	    	}
-	    	    	  }*/
 	    	    	  
 	    	    	  Set entrySet = map.entrySet();
 	    	          Iterator it = entrySet.iterator();
-	    	          //System.out.println("-----"+map.get(client.getId()));
-	    	          //System.out.println("client.getId())--=="+client.getId());
-	    	          
-	    	          //System.out.println("  Object key  Object value");
-	    	          //while (it.hasNext()) {
-	    	        	  //Map.Entry mapEntry = (Map.Entry) it.next();
 	    	              list = (List) map.get(client.getId());
 	    	              if(list!=null)
 	    	              {
 	    	              for (int j = 0; j < list.size(); j++) {
-	    	                 // System.out.println("\t" + mapEntry.getKey() + "\t  " + list.get(j));
-	    	                 /* System.out.println("j"+j);
-	    	            	  System.out.println("list.get(j)"+list.get(j));
-	    	                  System.out.println("message_topic"+message_topic);
-	    	                  System.out.println("!client.equals(session)"+!client.equals(session));
-	    	                  */
-	    	                  if (!client.equals(session) && list.get(j).equals(m))
+	    	                if (!client.equals(session) && list.get(j).equals(m))
 	      	    	        {
-	    	                	  //System.out.println("enee");
-	      	    			  //String msg=message;
-	      	    	        	try {
+	    	                	try {
+	    	                		//System.out.println("client.getId()"+client.getId());
 	      							client.getBasicRemote().sendText(m+msg);
-	      							//System.out.println("--------Sent ----- "+time+" Time "+m+msg+" to "+client.getId());
-	      							//Add_to_message_datamap(time,msg);
 	      						} 
 	      	    	        	catch (IOException e) {
 	      							// TODO Auto-generated catch block
@@ -220,7 +166,6 @@ public class EventBus
 	      	    	    	}
 	    	                  
 	    	              }
-	    	              //System.out.println("----");
 	    	          }
 	    	      }
 		    	}
@@ -236,56 +181,35 @@ public class EventBus
     {
     	Set entrySet = message_datamap.entrySet();
         Iterator it = entrySet.iterator();
-        
+        System.out.println("*********************"+session.getId());
     	while (it.hasNext()) {
             Map.Entry mapEntry = (Map.Entry) it.next();
             list = (List) message_datamap.get(mapEntry.getKey());
-            MessageFormat M=new MessageFormat();
-            //System.out.println("mapEntry.getKey() "+mapEntry.getKey());
-            //Timestamp actualTimeStampDate =actualTimeStampDate = new Timestamp((Long) mapEntry.getKey());
-           // System.out.println("   t = "+t +" value "+t.after((Timestamp) mapEntry.getKey()));
-            if(t.after((Timestamp) mapEntry.getKey()))
+            if(list!=null)
             {
-            	for (int j = 0; j < list.size(); j++) {
-                	M=(MessageFormat) list.get(j);
-                    System.out.println("\t" + mapEntry.getKey() + "\t  " +M.Message+"   "+M.Topic+ "   ");
-                }
+	            MessageFormat M=new MessageFormat();
+	            if(t.after((Timestamp) mapEntry.getKey()))
+	            {
+	            	for (int j = 0; j < list.size(); j++) {
+	                	M=(MessageFormat) list.get(j);
+	                	try {
+							//System.out.println("------------------- "+session.getId());
+	                		session.getBasicRemote().sendText("----------------------------"+M.Message);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+	                   // System.out.println("\t" + mapEntry.getKey() + "\t  " +M.Message+"   "+M.Topic+ "   ");
+	                }
+	            }
             }
             
         }
-    	/*Set entrySet = message_datamap.entrySet();
-        Iterator it = entrySet.iterator();
-        System.out.println("*****************Called");
-    	while (it.hasNext()) {
-            Map.Entry message_datamapEntry = (Map.Entry) it.next();
-            list = (List) message_datamap.get(message_datamapEntry.getKey());
-            Timestamp actualTimeStampDate =actualTimeStampDate = new Timestamp((Long) message_datamapEntry.getKey());
-            System.out.println("*****************t "+t);
-            System.out.println("actualTimeStampDate"+actualTimeStampDate);
-            if(actualTimeStampDate.before(t))
-            {
-            	for (int j = 0; j < list.size(); j++) {
-	                System.out.println("\t" + message_datamapEntry.getKey() + "\t  " + list.get(j));
-	                try {
-						session.getBasicRemote().sendText("--------*********-------"+(String) list.get(j));
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-	            }
-            }
-        }*/
     	
     }
     //Adding Client and topic to the list
     public void Add_to_Client_list(String session,String message)
     {
-    	/*client_list.put(session, message);
-    	for(Entry<String, String> m:client_list.entrySet()){  
-     	   System.out.println("Client "+m.getKey()+" Registred to "+m.getValue());  
-     	   //return m.getKey()+" "+m.getValue();
-     	  }*/
-    	//System.out.println("added");
     	map.put(session, message);
     	/*Set entrySet = map.entrySet();
         Iterator it = entrySet.iterator();
@@ -299,11 +223,7 @@ public class EventBus
         }*/
     	
     }
-    public void Add_to_message_datamap(Timestamp timestamp,String message)
-    {
-    	message_datamap.put(timestamp, message);	
-    	//System.out.println("Stored "+message);
-    }
+    
     public static void Start_EventBus()
     {
     	String[] args=args1;
@@ -320,8 +240,8 @@ public class EventBus
         try {
             server.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            System.out.print("Event Bus Started..");
-            System.out.print("Please press a key to stop");
+            System.out.println("Event Bus Started..");
+            System.out.println("Please press a key to stop");
             reader.readLine();
         }
         catch(DeploymentException DE)

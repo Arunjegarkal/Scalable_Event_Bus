@@ -64,26 +64,14 @@ public class ClientEndPoint {
                             //@Override
                             public void onMessage(String message) {
                                     System.out.println("[CLIENT RECV] Received message: "+message);
-                                    //session.getAsyncRemote().sendText("topic :: "+ arg1);
-                                    //String msg = "Message " + SENT_MESSAGE + "_" + message.split(",")[1];
-                                    //session.getAsyncRemote().sendText(msg);
-                                    //System.out.println("[CLIENT SEND] " + message);
-                            		//System.out.println("[CLIENT SEND] " + recvLatch.getCount());
                                     recvLatch.countDown();
                             }
                         });
                         
                         if(arg1_option.equals("1"))
                         {
-
-                        	
-                            Publisher p=new Publisher(timer,session,messageLatch,arg2_topic);
+                        	Publisher p=new Publisher(timer,session,messageLatch,arg2_topic);
                             p.start();
-                        	/*while(true)
-                        	{
-                        		session.getBasicRemote().sendText("for::p");
-                        	}*/
-                        	
                         }
                         else if(arg1_option.equals("2"))
                         {
@@ -98,19 +86,6 @@ public class ClientEndPoint {
             	        	ObjectOutputStream out = new ObjectOutputStream(buffer);
             	        	out.writeObject(MF);
             	        	session.getBasicRemote().sendObject(out);
-            	        	
-                        	//session.getBasicRemote().sendText("R::"+arg2_topic);
-            	        	/*
-            	        	MF.Message="get";
-            	        	MF.Time=new Timestamp(date.getTime());
-            	        	MF.Topic=arg2_topic;
-            	        	OutputStream file1 = new FileOutputStream("quarks.ser");
-            	            OutputStream buffer1 = new BufferedOutputStream(file1);
-            	        	//ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-            	        	ObjectOutputStream out1 = new ObjectOutputStream(buffer1);
-            	        	out.writeObject(MF);
-            	        	session.getBasicRemote().sendObject(out);
-            	        	*/
             	        	out.close();
                         }
                         
