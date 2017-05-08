@@ -1,17 +1,24 @@
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -20,11 +27,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 
 import javax.websocket.DeploymentException;
+import javax.websocket.EncodeException;
 import javax.websocket.Session;
 
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.Decoder;
+import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -35,7 +53,8 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.glassfish.tyrus.server.Server;
 
-
+import com.Avro.BroadcastMessage;
+import com.Avro.msgfmt;
 
 
 class GetTimestamp  extends TimerTask{
@@ -49,23 +68,41 @@ class GetTimestamp  extends TimerTask{
 	}
 	
 }
+class DisplayMsgCount1 extends TimerTask {
+	static int c=0,p=0;
+	
+	public void run() {
+		//if((c-p)>10)
+		System.out.println("-----Event-----------------Number of Publication in 5sec "+c+" - "+p+"="+(c-p));
+       if((c-p)>=550)
+       {
+    	   
+           System.out.println("Connected to another Bus...");
+           EventBus.ChangeEventBus();
+       }
+       p=c;
+    }
+}
+
 public class EventBus 
 {
     static Server server = null;
-    static Options options = new Options();
-    //static HashMap<String,String> client_list=new HashMap<String,String>(); 
-    private static Set<Session> clients = Collections.synchronizedSet(new HashSet<Session>());
-    static List list;
+    static Options options = new Options(); 
+    static Set<Session> clients = Collections.synchronizedSet(new HashSet<Session>());
+    static Set<Session> clients_pub = Collections.synchronizedSet(new HashSet<Session>());
+    private static List list;
     static MultiValueMap map = new MultiValueMap();
-    static MultiValueMap message_datamap = new MultiValueMap();
-    //Set entrySet = map.entrySet();
-    //Iterator it = entrySet.iterator();
+    static MultiValueMap map1 = new MultiValueMap();
+    static MultiValueMap Clients_list = new MultiValueMap();
+    private static MultiValueMap message_datamap = new MultiValueMap();
     static Timestamp time;
-    MessageFormat MF=new MessageFormat();
+    public static int msg_count=0;
+	public int prev_msg_count=0;
+	static int port_num;
     public EventBus()
     {
     	Timer sche = new Timer();
-		sche.schedule(new GetTimestamp(), 0, 1000);
+		sche.schedule(new DisplayMsgCount1(), 0, 5000);
     }
     private static void buildOptions() {
         // build option tables
@@ -101,83 +138,116 @@ public class EventBus
     //add the subscribers to the list
     public void add_subscriber(Session session)
     {
-    	clients.add(session);	
+    	
+    	if(clients.contains(session))
+    	{
+    		System.out.println("Presnt");
+    	}
+    	else
+    	{
+    		System.out.println("Added Client "+session.getId());
+        	clients.add(session);
+    	}
+
     }
     
-    public void Handle_message(String message, final Session session){
-    	//use buffering
-        InputStream file;
-		try {
-			file = new FileInputStream("quarks.ser");
-			InputStream buffer = new BufferedInputStream(file);
-	        ObjectInput input = new ObjectInputStream (buffer);
-	        MF = (MessageFormat) input.readObject();
-		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}catch (IOException e) {
+    public void Handle_message(String message, Session session){
+    	File avroOutput = new File("send.avro");
+    	msgfmt mf_reader= null;
+		try 
+		{
+			DatumReader<msgfmt> messageformateDatumReader = new SpecificDatumReader<msgfmt>(msgfmt.class);
+			DataFileReader<msgfmt> dataFileReader = new DataFileReader<msgfmt>(avroOutput, messageformateDatumReader);
+			mf_reader = dataFileReader.next(mf_reader);
+		} 
+		catch(NoSuchElementException nse){}
+		catch(IOException e) {}
+		msg_count=msg_count+1;
+        DisplayMsgCount1.c=DisplayMsgCount1.c+1;
+        try
+			{
+				if(mf_reader.getType().equals(2))
+				{
+					String[] split=((String) mf_reader.getTopic()).split(",");
+			    	for (String m: split)
+		            {
+			    		if((mf_reader.getType()).equals(2))
+						{
+			    			Add_to_Subscriber_list(session.getId(),m);
+						}
+		            }
+				}
+				if(mf_reader.getType().equals(1))
+				{
+			    	String message_topic=(String)mf_reader.getTopic();
+			    	String msg=(String)mf_reader.getMessage();
+			    	String[] split=message_topic.split(",");
+			    	Add_Message_to_list(mf_reader);
+			    	//System.out.println(mf_reader);
+		        	for (String m: split)
+		            {
+				    	synchronized(clients)
+				    	{
+				    		for(Session client : clients)
+				    		{
+				    			Set entrySet = map.entrySet();
+				    			Iterator it = entrySet.iterator();
+			    	            list = (List) map.get(client.getId());
+			    	            if(list!=null)
+			    	            {
+			    	            	for (int j = 0; j < list.size(); j++) 
+			    	            	{
+				    	                if (!client.equals(session) && list.get(j).equals(m))
+				      	    	        {
+				    	                	File avroinput = new File("Receive.avro");
+				                    		try {
+			                    					DatumWriter<msgfmt> messageformateDatumWriter = new SpecificDatumWriter<msgfmt>(msgfmt.class);
+			                    					DataFileWriter<msgfmt> dataFileWriter = new DataFileWriter<msgfmt>(messageformateDatumWriter);
+			                    					dataFileWriter.create(mf_reader.getSchema(), avroinput);
+			                    					dataFileWriter.append(mf_reader);
+			                    					//System.out.println(mf_reader);
+			                    					client.getBasicRemote().sendObject(dataFileWriter);
+			                    					dataFileWriter.close();
+			                    					//BroadcastMessage BM=new BroadcastMessage(client,"Change Bus","Topic",3,""+new Timestamp(System.currentTimeMillis()),"Receive.avro");
+				                    			} 
+				                    			catch (IOException e){}
+				                    			catch (EncodeException e) 
+				                    			{
+													// TODO Auto-generated catch block
+													e.printStackTrace();
+												}
+				                    		}
+				    	            	}
+			    	            	}
+				    			}
+				    		}
+		            	}
+					}
+				}
+				catch(NullPointerException ne){}
+	}
+    public void Add_Clients_list(Session session,String m)
+    {
+    	if(Clients_list.containsValue(m, session))
+    		System.out.println("--");
+    	else
+    		Clients_list.put(m, session.getId());
+    }
+    public void Add_Message_to_list(msgfmt mf_reader)
+    {
+    	 
+		//try 
+		{
+			java.sql.Timestamp ts = java.sql.Timestamp.valueOf((String) mf_reader.getTime() );
+	    	message_datamap.put(ts ,mf_reader.getMessage());
+	    } //catch (java.text.ParseException e) 
+		{
 			// TODO Auto-generated catch block
 			//e.printStackTrace();
-		} 
+		}
         
-		if(MF.Message.equals("Register"))
-		{
-    		String[] split=MF.Topic.split(",");
-	    	//System.out.println("split "+split);
-	    	for (String m: split)
-            {
-            	Add_to_Client_list(session.getId(), m);
-    	    	System.out.println("[SERVER RECV] Session " + session.getId() + " Registred Topic : " + m);
-            }
-	    	Get_Message_to_list( new Timestamp(System.currentTimeMillis()),MF.Topic,session);
-	    }
-        else
-	    {
-	    	String message_topic=MF.Topic;
-	    	String msg=MF.Message;
-	    	String[] split=message_topic.split(",");
-	    	Add_Message_to_list(MF.Time,MF);
-        	for (String m: split)
-            {
-		    	synchronized(clients){
-		    		
-	    	      for(Session client : clients){
-	    	    	  
-	    	    	  Set entrySet = map.entrySet();
-	    	          Iterator it = entrySet.iterator();
-	    	              list = (List) map.get(client.getId());
-	    	              if(list!=null)
-	    	              {
-	    	              for (int j = 0; j < list.size(); j++) {
-	    	                if (!client.equals(session) && list.get(j).equals(m))
-	      	    	        {
-	    	                	try {
-	    	                		//System.out.println("client.getId()"+client.getId());
-	      							client.getBasicRemote().sendText(m+msg);
-	      						} 
-	      	    	        	catch (IOException e) {
-	      							// TODO Auto-generated catch block
-	      							e.printStackTrace();
-	      						}
-	      	    	        	
-	      	    	    	}
-	    	                  
-	    	              }
-	    	          }
-	    	      }
-		    	}
-            }
-	    }
     }
-    public void Add_Message_to_list(Timestamp t,MessageFormat M)
-    {
-    	message_datamap.put(t, M);
-    	//System.out.println("Stored "+M.Message);
-    }
-    public void Get_Message_to_list(Timestamp t,String topic,Session session)
+    public void Get_Message_to_list(Timestamp t,MessageFormat MF,Session session)
     {
     	Set entrySet = message_datamap.entrySet();
         Iterator it = entrySet.iterator();
@@ -194,12 +264,24 @@ public class EventBus
 	                	M=(MessageFormat) list.get(j);
 	                	try {
 							//System.out.println("------------------- "+session.getId());
-	                		session.getBasicRemote().sendText("----------------------------"+M.Message);
+	                		//session.getBasicRemote().sendText("----------------------------"+M.Message);
+	                		OutputStream file_Receive = new FileOutputStream("Receive.ser");
+	        	            OutputStream buffer_Receive = new BufferedOutputStream(file_Receive);
+	        	        	//ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+	        	        	ObjectOutputStream out_Receive = new ObjectOutputStream(buffer_Receive);
+	        	        	out_Receive.writeObject(MF);
+	        	        	session.getBasicRemote().sendObject(out_Receive);
+	        	        	out_Receive.flush();
+	        	        	out_Receive.close();
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 	                   // System.out.println("\t" + mapEntry.getKey() + "\t  " +M.Message+"   "+M.Topic+ "   ");
+	                	catch (EncodeException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 	                }
 	            }
             }
@@ -207,10 +289,32 @@ public class EventBus
         }
     	
     }
-    //Adding Client and topic to the list
-    public void Add_to_Client_list(String session,String message)
+    public static void remove_session(Session session)
     {
-    	map.put(session, message);
+    	clients.remove(session);
+    	map.remove(session);
+    	Clients_list.remove(session.getId());
+    	System.out.println("Removed Session "+session.getId());
+    }
+    public static void ChangeEventBus()
+    {
+    	synchronized(clients){
+    		for(Session client : clients){
+  	    	  System.out.println(client.getId());
+  	    	  BroadcastMessage BM=new BroadcastMessage(client,"Change Bus","Topic",3,""+new Timestamp(System.currentTimeMillis()),"Receive.avro");
+    		}
+  	     }
+    }
+    //Adding Client and topic to the list
+    public void Add_to_Subscriber_list(String session,String topic)
+    {
+    	if(!map.containsKey(session))
+    	{
+    		System.out.println("[SERVER RECV] Session " + session + " Registred Topic : " + topic);
+    		System.out.println("Added "+session);
+    		map.put(session, topic);
+    	}
+		
     	/*Set entrySet = map.entrySet();
         Iterator it = entrySet.iterator();
         
@@ -218,15 +322,15 @@ public class EventBus
             Map.Entry mapEntry = (Map.Entry) it.next();
             list = (List) map.get(mapEntry.getKey());
             for (int j = 0; j < list.size(); j++) {
-                System.out.println("\t" + mapEntry.getKey() + "\t  " + list.get(j));
+                //System.out.println("\t" + mapEntry.getKey() + "\t  " + list.get(j));
             }
         }*/
     	
     }
     
-    public static void Start_EventBus()
+    //public static String[] args1;
+    public static void main( String[] args )
     {
-    	String[] args=args1;
     	EventBusConfig config = EventBusConfig.getInstance();
         buildOptions();
         //The port that we should run on can be set into an environment variable
@@ -234,8 +338,9 @@ public class EventBus
         String[] argValues = parseArgs(args);
         config.setIp_addr(argValues[0]);
         config.setPort_num(Integer.valueOf(argValues[1]));
-        
-        server = new Server(config.getIp_addr(), config.getPort_num(), "/websockets", null, ServerEndPoint.class);
+        port_num=8081;
+        //server = new Server(config.getIp_addr(), config.getPort_num(), "/websockets", null, ServerEndPoint.class);
+        server = new Server(config.getIp_addr(), port_num, "/websockets", null, ServerEndPoint.class);
         
         try {
             server.start();
@@ -246,6 +351,7 @@ public class EventBus
         }
         catch(DeploymentException DE)
         {
+        	DE.printStackTrace();
         	System.out.println("Another instance of Event Bus is running");
         }
         catch (Exception e) {
@@ -253,11 +359,5 @@ public class EventBus
         } finally {
             server.stop();
         }
-    }
-    public static String[] args1;
-    public static void main( String[] args )
-    {
-    	args1=args;
-    	Start_EventBus();
     }
 }
