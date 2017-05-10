@@ -59,11 +59,11 @@ public class Publisher extends Thread{
 		while(true)
 		{
 			try {
-	            BroadcastMessage BM=new BroadcastMessage(session,""+UUID.randomUUID(),Topic,1,""+new Timestamp(System.currentTimeMillis()),"send.avro");
+	            	BroadcastMessage BM=new BroadcastMessage(session,""+UUID.randomUUID(),Topic,1,""+new Timestamp(System.currentTimeMillis()),"send.avro");
 					msg_count=msg_count+1;
     	            DisplayMsgCount.c=DisplayMsgCount.c+1;
     	          
-	        } 
+	        	} 
 	        catch(IllegalStateException i)
 			{
 	        	this.stop();

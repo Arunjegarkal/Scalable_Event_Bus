@@ -72,15 +72,14 @@ class DisplayMsgCount1 extends TimerTask {
 	static int c=0,p=0;
 	
 	public void run() {
-		//if((c-p)>10)
-		System.out.println("-----Event-----------------Number of Publication in 5sec "+c+" - "+p+"="+(c-p));
-       if((c-p)>=550)
-       {
-    	   
-           System.out.println("Connected to another Bus...");
-           EventBus.ChangeEventBus();
-       }
-       p=c;
+		if((c-p)!=0)
+			System.out.println("-----Event-----------------Number of Publication in 5sec "+c+" - "+p+"="+(c-p));
+		if((c-p)>=7000)
+		{
+			System.out.println("Connected to another Bus...");
+			EventBus.ChangeEventBus();
+		}
+		p=c;
     }
 }
 
@@ -338,7 +337,7 @@ public class EventBus
         String[] argValues = parseArgs(args);
         config.setIp_addr(argValues[0]);
         config.setPort_num(Integer.valueOf(argValues[1]));
-        port_num=8081;
+        port_num=Integer.parseInt(args[0]);
         //server = new Server(config.getIp_addr(), config.getPort_num(), "/websockets", null, ServerEndPoint.class);
         server = new Server(config.getIp_addr(), port_num, "/websockets", null, ServerEndPoint.class);
         

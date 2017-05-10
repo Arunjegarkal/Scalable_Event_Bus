@@ -55,17 +55,17 @@ public class ClientEndPointPub {
     public static String port1="8081";
     static Publisher p;
     public static void main(String [] args){
-    		String arg1_option1="1";
-    		final String arg2_topic="aa";
+    	String arg1_option1=args[0];
+		final String arg2_topic=args[1];
     		final MessageFormat MF=new MessageFormat();
-    		
+    		System.out.println("Connected to EvenBus at Port Number "+port1);
     		StartClient(arg1_option1,arg2_topic,port1);
 
     }    
 
 
 public static void StartClient(final String arg1_option,final String arg2_topic,final String port){
-    System.out.println("arg1_option "+arg1_option+"arg2_topic "+arg2_topic+"port "+port);
+    //System.out.println("arg1_option "+arg1_option+"arg2_topic "+arg2_topic+"port "+port);
 	try {
         String wsAddr = "ws://localhost:"+port+"/websockets/StringEndPoint";
         
@@ -100,17 +100,19 @@ public static void StartClient(final String arg1_option,final String arg2_topic,
                     			  mf_reader = dataFileReader.next(mf_reader);
                     			  //if((mf_reader.getType()).equals(3))
                     			  {
-                    				  System.out.println("*********************************************Event Buss change");
+                    				  System.out.println("*********************************************Event Buss changed*********************************************");
                     				  p.stop();
                     				  if(port1=="8081")
                     				  {
-                    					  port1="8080";
-                    					  StartClient("1",arg2_topic,"8080");
+                    					  	port1="8080";
+                  							System.out.println("Connected to EvenBus at Port Number "+port1);
+                  							StartClient("1",arg2_topic,"8080");
                     				  }
                     				  else
                     				  {
-                    					  port1="8081";
-                    					  StartClient("1",arg2_topic,"8081");  
+                    					  	port1="8081";
+                  							System.out.println("Connected to EvenBus at Port Number "+port1);
+                  							StartClient("1",arg2_topic,"8081");  
                     				  }
                     			  }
                     		  }
@@ -125,7 +127,7 @@ public static void StartClient(final String arg1_option,final String arg2_topic,
                     
                     if(active_ind==1)
                 	{
-                    	System.out.println("sent");
+                    	//System.out.println("sent");
                     	BroadcastMessage BM=new BroadcastMessage(session,"Register",arg2_topic,1,""+new Timestamp(System.currentTimeMillis()),"send.avro");
                     	p=new Publisher(session,messageLatch,arg2_topic,1);
                         p.sleep(500);
