@@ -38,7 +38,7 @@ TypeCode used:
   
   Message will be serialized by using ‘Avro’ through which it is converted to the bytestream and writes into the sender buffer present at the eventbus end. All the Messages will be sent to eventbus  using session.getBasicRemote().sendObject(dataFileWriter). Once the message is received at the eventbus end, OnMessage event will be triggered at the eventbus once the publisher publishes the message to the eventbus. Once the OnMessage event is triggered, the topic of the message will be checked and the Hashmap will be scanned in order to get the subscriber's registered for that topic and thereby message will be written into the receiver buffer at the eventbus end and broadcasts the messages to all the subscribers registered to the topic by  using client.getBasicRemote().sendObject(dataFileWriter). Whenever a message is received by the subscriber, Websocket OnMessage event will be triggered at the subscriber indicating message is received. Here the message received at the subscriber end will be deserialized from receive buffer.
   
-#Load Balancing:
+#### Load Balancing:
 
   If the EventBus is OverLoaded by the message i.e. whenever the message limit crosses a certain threshold set at the eventbus end, it broadcast the message to clients to switch the eventbus.
 Message with TypeCode ‘003’ and the new port number of neighbor eventbus to which it has to connect will be sent indicating the eventbus change event.
