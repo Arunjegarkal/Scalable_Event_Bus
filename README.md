@@ -1,6 +1,6 @@
 ## A High Performance, Scalable Event-Bus System for Distributed Data Synchronization
 
-  #Design
+### Design
  
  In this project, we basically focus to overcome the limitations of the existing techniques and our primary goal is to provide the support for fully transactional communication between the clients and the eventbus thereby making the communication more effective.
 
@@ -14,7 +14,7 @@
   
   Above figure gives a clear picture on how we have handled the scalability with respect to different event buses. We have done the scalability for load balancing the messages at the event bus end i.e., whenever the messages in the first event bus reaches to a particular threshold value, message delivery will be automatically transferred onto a new event bus thereby balancing the load at the event bus end and assuring a smooth flow of messages between the publisher-eventbus and eventbus-subscriber. As the number of messages increase at the eventbus end leading to the buffer overflow, the current eventbus automatically switches to a new eventbus in order to balance the load at its end. 
 
-#Implementation
+### Implementation
 
   Websockets replaces the native socket and multithreading concepts of java, which is the efficient way of establishing the pub-sub connection. Specifically, Annotation endpoint classes such as clientendpoint and serverendpoint are used for http connections. Websocket clientendpoint is used by the client to connect to eventbus and serverendpoint is used by the eventbus for connecting to the server and serving the subscribers.
 
@@ -29,7 +29,9 @@ Below is the message format at the eventbus end:
 ![2](https://cloud.githubusercontent.com/assets/22176809/25927930/f2fbffac-35be-11e7-894f-260fd34d1dae.PNG)
 
 TypeCode used:
+
 ‘001’ to achieve the behaviour of the Publisher
+
 ‘002’ to achieve the behaviour of the Subscriber
 
   Once the publisher establishes the connection to the eventbus, a new thread will be created for publishing the messages to the eventbus. Publisher will send the message in the above message format while publishing the messages to the eventbus.
