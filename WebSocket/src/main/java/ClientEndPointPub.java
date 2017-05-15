@@ -4,7 +4,9 @@
  * and open the template in the editor.
  */
 
-
+/*
+ * This Class act as the Publisher and executes all the behaviors related to Publisher  
+ */
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -64,10 +66,11 @@ public class ClientEndPointPub {
     }    
 
 
-public static void StartClient(final String arg1_option,final String arg2_topic,final String port){
-    //System.out.println("arg1_option "+arg1_option+"arg2_topic "+arg2_topic+"port "+port);
-	try {
-        String wsAddr = "ws://localhost:"+port+"/websockets/StringEndPoint";
+    //This function is called to start the Publisher
+	public static void StartClient(final String arg1_option,final String arg2_topic,final String port){
+    try {
+    	//This function is called to start the subscriber
+    	String wsAddr = "ws://localhost:"+port+"/websockets/StringEndPoint";
         
         messageLatch = new CountDownLatch(10);
         recvLatch = new CountDownLatch(10);
@@ -117,18 +120,15 @@ public static void StartClient(final String arg1_option,final String arg2_topic,
                     			  }
                     		  }
                     		} 
-                    		catch(IOException e) 
-                    		{
-                    			//System.out.println("Error reading Avro");
-                    		}
+                    		catch(IOException e){}
                                 recvLatch.countDown();
                         }
                     });
-                    
+                 // Register only once when the client is started
                     if(active_ind==1)
                 	{
-                    	//System.out.println("sent");
                     	BroadcastMessage BM=new BroadcastMessage(session,"Register",arg2_topic,1,""+new Timestamp(System.currentTimeMillis()),"send.avro");
+                    	//Start the publisher thread to send message related to topic
                     	p=new Publisher(session,messageLatch,arg2_topic,1);
                         p.sleep(500);
                     	p.start();

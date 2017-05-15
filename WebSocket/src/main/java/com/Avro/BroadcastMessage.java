@@ -11,7 +11,9 @@ import javax.websocket.Session;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.specific.SpecificDatumWriter;
-
+/*
+ * This is Reuable class which is used by Eventbus, subscriber and publisher for publishing the message
+ */
 public class BroadcastMessage {
 	Session session;
 	String msg;
@@ -28,6 +30,7 @@ public class BroadcastMessage {
 		this.file=file;
 		send();
 	}
+	/*function is declared as synchronized because at a time only one can access this among Eventbus, subscriber and publisher*/
 	public synchronized void send()
 	{
 		msgfmt mf_writer1=new msgfmt();
@@ -35,9 +38,9 @@ public class BroadcastMessage {
 		mf_writer1.setTopic(Topic);
 		mf_writer1.setType(type);	
 		mf_writer1.setTime(time);
-		//Serialize sample msgfmt
 		File avroOutput = new File(file);
 			try {
+					//Serialize data into bytestream using Avro
 					DatumWriter<msgfmt> messageformateDatumWriter = new SpecificDatumWriter<msgfmt>(msgfmt.class);
 					DataFileWriter<msgfmt> dataFileWriter = new DataFileWriter<msgfmt>(messageformateDatumWriter);
 					dataFileWriter.create(mf_writer1.getSchema(), avroOutput);

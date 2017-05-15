@@ -4,7 +4,9 @@
  * and open the template in the editor.
  */
 
-
+/*
+ * This Class act as the subscriber and executes all the behaviors related to subcriber  
+ */
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -45,8 +47,6 @@ import org.glassfish.tyrus.client.ClientManager;
 import com.Avro.BroadcastMessage;
 import com.Avro.msgfmt;
 
-
-
 public class ClientEndPoint {
     private static CountDownLatch messageLatch;
     private static CountDownLatch recvLatch;
@@ -56,19 +56,17 @@ public class ClientEndPoint {
     public static void main(String [] args){
     		String arg1_option1=args[0];
     		final String arg2_topic=args[1];
-    		//String arg1_option1="2";
-    		//final String arg2_topic="aa";
     		final MessageFormat MF=new MessageFormat();
     		System.out.println("Connected to EvenBus at Port Number "+port1);
     		StartClient(arg1_option1,arg2_topic,port1);
 
     }    
 
-
+    //This function is called to start the subscriber
 	public static void StartClient(final String arg1_option,final String arg2_topic,final String port){
-	    //System.out.println("arg1_option "+arg1_option+"arg2_topic "+arg2_topic+"port "+port);
-		
-	    try {
+	    
+		try {
+	    	//Connecting to websocket at port# defined in "port"
 	        String wsAddr = "ws://localhost:"+port+"/websockets/StringEndPoint";
 	        
 	        messageLatch = new CountDownLatch(10);
@@ -95,10 +93,12 @@ public class ClientEndPoint {
 	                    				DatumReader<msgfmt> messageformateDatumReader = new SpecificDatumReader<msgfmt>(msgfmt.class);
 	                    				DataFileReader<msgfmt> dataFileReader = new DataFileReader<msgfmt>(avroInput, messageformateDatumReader);
 	                    				mf_reader = dataFileReader.next(mf_reader);
+	                    				//Check is the message is received is of type 3 i.e, change eventbus type
 	                    				if((mf_reader.getType()).equals(3))
 	                    				{
 	                    					System.out.println("*********************************************Event Buss changed*********************************************");
 	                    					System.out.println(mf_reader);
+	                    					//Check the port# and select the other eventbus's port number
 	                    					if(port1=="8081")
 	                    					{	
 	                    						port1="8080";
@@ -114,18 +114,18 @@ public class ClientEndPoint {
 	                    				}
 	                    				else
 	                    				{
-	                    					System.out.println("Received: Topic "+mf_reader.getTopic()+" Message "+mf_reader.getMessage()+" Published at "+mf_reader.getTime()+" Received at "+new Timestamp(System.currentTimeMillis()));
+	                    					System.out.println("Received: Topic "+mf_reader.getTopic()+" Message "+mf_reader.getMessage()+" Published at "+mf_reader.getTime()+" Received at "+System.nanoTime());
 	                    				}
 	                    			} 
 	                    			catch(IOException e){}
 	                                recvLatch.countDown();
 	                        	}
 	                			});
+	                			// Register only once when the client is started
 	                			if(active_ind==1)
 	                			{
 	                				System.out.println("Request Sent...");
-			                		//System.out.println("arg2_topic "+arg2_topic+" type  2 "+"");
-			                    	BroadcastMessage BM=new BroadcastMessage(session,"Register",arg2_topic,2,""+new Timestamp(System.currentTimeMillis()),"send.avro");
+			                		BroadcastMessage BM=new BroadcastMessage(session,"Register",arg2_topic,2,""+new Timestamp(System.currentTimeMillis()),"send.avro");
 			                    	active_ind=0;
 	                			}
 	                    

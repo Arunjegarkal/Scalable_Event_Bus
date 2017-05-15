@@ -57,6 +57,7 @@ import com.Avro.BroadcastMessage;
 import com.Avro.msgfmt;
 
 
+//Used to generate the current timestamp
 class GetTimestamp  extends TimerTask{
 	java.util.Date date;
 	//EventBus EB=new EventBus();
@@ -68,12 +69,14 @@ class GetTimestamp  extends TimerTask{
 	}
 	
 }
+
+//This class is called every 5sec to calculate the throughput of the EventBus
 class DisplayMsgCount1 extends TimerTask {
 	static int c=0,p=0;
 	
 	public void run() {
-		if((c-p)!=0)
-			System.out.println("-----Event-----------------Number of Publication in 5sec "+c+" - "+p+"="+(c-p));
+		System.out.println("-----Event-----------------Number of Publication in 5sec "+c+" - "+p+"="+(c-p));
+		//Send the eventbus change signal if throughtput reach 7000 
 		if((c-p)>=7000)
 		{
 			System.out.println("Connected to another Bus...");
@@ -138,19 +141,16 @@ public class EventBus
     public void add_subscriber(Session session)
     {
     	
-    	if(clients.contains(session))
-    	{
-    		System.out.println("Presnt");
-    	}
-    	else
+    	if(!clients.contains(session))
     	{
     		System.out.println("Added Client "+session.getId());
         	clients.add(session);
     	}
 
     }
-    
+    //This is called when onMessage event is triggered
     public void Handle_message(String message, Session session){
+    	//Read message from the send buffer and deserializ it
     	File avroOutput = new File("send.avro");
     	msgfmt mf_reader= null;
 		try 
@@ -165,8 +165,10 @@ public class EventBus
         DisplayMsgCount1.c=DisplayMsgCount1.c+1;
         try
 			{
+        		//Check if the message is for registration
 				if(mf_reader.getType().equals(2))
 				{
+					//Register multiple times of the client is requested for multiple topic's
 					String[] split=((String) mf_reader.getTopic()).split(",");
 			    	for (String m: split)
 		            {
@@ -182,11 +184,12 @@ public class EventBus
 			    	String msg=(String)mf_reader.getMessage();
 			    	String[] split=message_topic.split(",");
 			    	Add_Message_to_list(mf_reader);
-			    	//System.out.println(mf_reader);
+			    	//Loop for each topic the publisher has published the message
 		        	for (String m: split)
 		            {
 				    	synchronized(clients)
 				    	{
+				    		//Loop for each client that are registred for that topic
 				    		for(Session client : clients)
 				    		{
 				    			Set entrySet = map.entrySet();
@@ -198,6 +201,7 @@ public class EventBus
 			    	            	{
 				    	                if (!client.equals(session) && list.get(j).equals(m))
 				      	    	        {
+				    	                	//Serialize the message and write into receiver buffer and sent message to the subxcriber
 				    	                	File avroinput = new File("Receive.avro");
 				                    		try {
 			                    					DatumWriter<msgfmt> messageformateDatumWriter = new SpecificDatumWriter<msgfmt>(msgfmt.class);
@@ -207,8 +211,7 @@ public class EventBus
 			                    					//System.out.println(mf_reader);
 			                    					client.getBasicRemote().sendObject(dataFileWriter);
 			                    					dataFileWriter.close();
-			                    					//BroadcastMessage BM=new BroadcastMessage(client,"Change Bus","Topic",3,""+new Timestamp(System.currentTimeMillis()),"Receive.avro");
-				                    			} 
+			                    				} 
 				                    			catch (IOException e){}
 				                    			catch (EncodeException e) 
 				                    			{
@@ -225,6 +228,7 @@ public class EventBus
 				}
 				catch(NullPointerException ne){}
 	}
+    //Add the client session information into the hashmap
     public void Add_Clients_list(Session session,String m)
     {
     	if(Clients_list.containsValue(m, session))
@@ -232,6 +236,7 @@ public class EventBus
     	else
     		Clients_list.put(m, session.getId());
     }
+    //Add the message to the hashmap to handle fault tolerance
     public void Add_Message_to_list(msgfmt mf_reader)
     {
     	 
@@ -246,6 +251,7 @@ public class EventBus
 		}
         
     }
+    //Get all the message from the list which are publisher between timestamp t and current timestamp
     public void Get_Message_to_list(Timestamp t,MessageFormat MF,Session session)
     {
     	Set entrySet = message_datamap.entrySet();
@@ -288,6 +294,7 @@ public class EventBus
         }
     	
     }
+    //Remove sessio information from the list once the client connect to other eventbus
     public static void remove_session(Session session)
     {
     	clients.remove(session);
@@ -295,6 +302,7 @@ public class EventBus
     	Clients_list.remove(session.getId());
     	System.out.println("Removed Session "+session.getId());
     }
+    //Broadcast change eventbus to client with message type code 3
     public static void ChangeEventBus()
     {
     	synchronized(clients){
@@ -307,7 +315,7 @@ public class EventBus
     //Adding Client and topic to the list
     public void Add_to_Subscriber_list(String session,String topic)
     {
-    	if(!map.containsKey(session))
+    	if(!map.containsValue(session, topic))
     	{
     		System.out.println("[SERVER RECV] Session " + session + " Registred Topic : " + topic);
     		System.out.println("Added "+session);
@@ -338,7 +346,6 @@ public class EventBus
         config.setIp_addr(argValues[0]);
         config.setPort_num(Integer.valueOf(argValues[1]));
         port_num=Integer.parseInt(args[0]);
-        //server = new Server(config.getIp_addr(), config.getPort_num(), "/websockets", null, ServerEndPoint.class);
         server = new Server(config.getIp_addr(), port_num, "/websockets", null, ServerEndPoint.class);
         
         try {

@@ -21,6 +21,7 @@ import org.apache.avro.specific.SpecificDatumWriter;
 import com.Avro.BroadcastMessage;
 import com.Avro.msgfmt;
 
+// This class is called every 5sec to calculate the throughput 
 class DisplayMsgCount extends TimerTask {
 	static int c=0,p=0;
 	
@@ -40,30 +41,32 @@ public class Publisher extends Thread{
 	 String Topic;
 	 public static int msg_count=0;
 	 public int prev_msg_count=0;
+	 //Constructor to assign all the value to the local variables
 	Publisher(Session session,CountDownLatch messageLatch,String topic,int Type)
 	{
 		this.timer=timer;
 		this.session=session;
 		this.messageLatch=messageLatch;
 		Topic=topic;
-		// And From your main() method or any other method
 		Timer sche = new Timer();
 		sche.schedule(new DisplayMsgCount(), 0, 5000);
 	}
-	
+	//Start the publisher thread
 	public void run()
 	{
+		Timestamp tt=new Timestamp(System.currentTimeMillis());
 		MessageFormat MF=new MessageFormat();
 		java.util.Date date;
-		int j=0;
 		while(true)
 		{
 			try {
-	            	BroadcastMessage BM=new BroadcastMessage(session,""+UUID.randomUUID(),Topic,1,""+new Timestamp(System.currentTimeMillis()),"send.avro");
+	            	//Populate the random message and call the BroadcastMessage class to send the message 
+					BroadcastMessage BM=new BroadcastMessage(session,""+UUID.randomUUID(),Topic,1,""+System.nanoTime(),"send.avro");
 					msg_count=msg_count+1;
     	            DisplayMsgCount.c=DisplayMsgCount.c+1;
     	          
 	        	} 
+			//catch when faild to reach eventbus 
 	        catch(IllegalStateException i)
 			{
 	        	this.stop();
